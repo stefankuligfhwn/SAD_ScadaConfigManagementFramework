@@ -1,0 +1,23 @@
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+
+@Service
+public class ChangeMonitorService {
+
+    private final NotificationHandler notificationHandler;
+    private final ChangeLogRepository changeLogRepository;
+
+    public ChangeMonitorService(NotificationHandler notificationHandler, ChangeLogRepository changeLogRepository) {
+        this.notificationHandler = notificationHandler;
+        this.changeLogRepository = changeLogRepository;
+    }
+
+    @Scheduled(fixedRate = 10000) // Check every 10 seconds
+    public void checkForChanges() {
+        List<ConfigChangeLog> changes = changeLogRepository.findRecentChanges();
+        for (ConfigChangeLog change : changes) {
+            notificationHandler.notifyClients("Configuration changed: " + change.toString());
+            changeLogRepository.markAsProcessed(change.getId());
+        }
+    }
+}
